@@ -1,89 +1,74 @@
 # chunky
 
-a lightweight Python package for document splitting automation into symantically meaningful chunks using Hidden Markov Models (HMMs).
+HMM-based document chunking for boundary-aware text segmentation.
 
-It detects shifts in subject or category across a document and groups sentences into coherent segments.
-
----
+`chunky` detects semantic shifts across a document and groups adjacent sentences into coherent chunks.
 
 ## Installation
 
-Install directly from GitHub:
+Core package:
 
 ```bash
 pip install git+https://github.com/michavardy/chunky.git
 ```
 
-For OpenAI-powered embeddings and eval tooling:
+With OpenAI embeddings and evaluation tooling:
 
 ```bash
 pip install "chunky[openai,eval] @ git+https://github.com/michavardy/chunky.git"
 ```
 
-`chunky` depends on `hmmx`, which is also installable directly from GitHub.
----
+`chunky` installs `hmmx` as a dependency.
 
 ## Usage
-
-### Module layout
-
-- `chunky.documents`: document loading and sentence splitting
-- `chunky.embeddings`: embedding wrappers and model loaders
-- `chunky.api`: external-facing chunking functions
-
-The package root still re-exports the main public functions for compatibility.
-
-### Auto Chunking
-
-Let the model infer categories automatically:
 
 ```python
 from chunky import auto_chunk
 
-for chunk in auto_chunk(document):
-    ... # further document processing
+document = "Sentence one. Sentence two. Sentence three."
+
+chunks = auto_chunk(document, max_chunk_length=500)
 ```
 
-### CLI
-
-After installation, the CLI is available as:
-
-```bash
-chunky --pdf "C:/path/to/document.pdf" --output "C:/path/to/output"
-```
-
-### Guided Chunking
-
-Provide your own categories:
+## Example
 
 ```python
-from chunky.api import guided_chunk
+from chunky import auto_chunk, auto_chunk_from_path
 
-document: str = doc1
-categories: list[str] = ["cat1", "cat2", "cat3"]
+chunks = auto_chunk("Sentence one. Sentence two.")
+file_chunks = auto_chunk_from_path("./notes.txt", max_chunk_length=800)
 
-for category, chunk in guided_chunk(document, categories):
-    ... # further document processing
+for index, chunk in enumerate(file_chunks, start=1):
+    ... # rag pipeline
 ```
 
-`guided_chunk` is not implemented yet.
----
 
-## Additional arguments
-
-- **embedding_model** Custom embedding model (defaults to a built-in open-source model)
-- **max_chunk_length** Maximum chunk size (in characters)
-- **overlap**: Overlap between consecutive chunks (in characters)
-
-
-## Eval
+## CLI
 
 ```bash
+chunky --file_path "C:/path/to/document.txt" --output "C:/path/to/output"
+chunky --pdf "C:/path/to/document.pdf" --output "C:/path/to/output"
+chunky --url "https://example.com/article" --output "C:/path/to/output"
+```
+
+## Results
+
+`chunky` includes a simple evaluation script for comparing HMM-based chunking against a fixed-size baseline.
+
+```text
 Ground-truth chunks: 20
 Document length: 5409 characters
 | method   |   chunks |   coverage |   purity |   score |
-|----------|----------|------------|----------|---------|      
-| baseline |       14 |      50.79 |    56.41 |   53.60 |      
-| chunky   |       31 |      49.93 |    47.63 |   48.78 |      
-| delta    |       17 |      -0.86 |    -8.78 |   -4.82 | 
+|----------|----------|------------|----------|---------|
+| baseline |       14 |      50.79 |    56.41 |   53.60 |
+| chunky   |       31 |      49.93 |    47.63 |   48.78 |
+| delta    |       17 |      -0.86 |    -8.78 |   -4.82 |
 ```
+
+This benchmark is intended as a diagnostic reference, not a claim of universal performance.
+
+## Design
+
+`chunky` is organized as a small pipeline: split the document into sentences, embed each sentence, compute local embedding differences, smooth and normalize those differences, then fit an HMM over the resulting sequence to infer chunk boundaries.
+
+The design is modular. Document loading, embedding generation, feature extraction, and HMM inference are kept separate so individual components can be swapped without changing the public API.
