@@ -1,0 +1,40 @@
+[build-system]
+requires = ["hatchling>=1.25.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "chunky"
+version = "0.1.0"
+description = "Document chunking with HMM-based boundary detection."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [
+  { name = "Michav" }
+]
+dependencies = [
+  "numpy>=2.0",
+  "PyPDF2>=3.0",
+  "requests>=2.32",
+  "scipy>=1.13",
+  "sentence-transformers>=3.0",
+  "tqdm>=4.66",
+  "urllib3>=2.0",
+  "hmmx @ git+https://github.com/michavardy/hmmx.git",
+]
+
+[project.optional-dependencies]
+openai = [
+  "openai>=1.0",
+  "python-dotenv>=1.0",
+]
+eval = [
+  "langchain-text-splitters>=0.3",
+  "tabulate>=0.9",
+]
+
+[project.scripts]
+chunky = "chunky.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/chunky"]

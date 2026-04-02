@@ -1,0 +1,7 @@
+.venv
+.env
+.vscode
+__pycache__
+*.pyc
+scripts/load_chunky.sh
+requirements.txt
